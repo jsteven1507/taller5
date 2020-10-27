@@ -1,0 +1,85 @@
+import numpy as np #librería en la que se define un tipo de dato que representa matrices multidimensionales
+# además incluye algunas funcionalidades básicas para trabajar con ellas
+
+import os  #libreria para el acceso portable a funciones específicas del sistema operativo
+import cv2 #OpenCV es una biblioteca libre de visión artificial originalmente desarrollada por Intel
+
+from camera_model import *  # se importa el codigo de modelo de camara
+import json
+
+if __name__ == '__main__':
+
+
+    # dimensiones de la imagen a visualizar
+    width =1200
+    height = 720
+
+    #Se lee el archivo json donde esta la matriz K, tilt, pan, d y h
+    path = "C:/Users/Steven/Documents/8 semestre/Procesamiento de imagenes/taller5ce"
+    file_name = 'calibra.json'
+    json_file = os.path.join(path, file_name)
+
+    with open(json_file) as fp:
+        json_data = json.load(fp)
+    K = json_data["K"]
+    tilt = json_data["tilt"]
+    pan = json_data["pan"]
+    d = json_data["d"]
+    h = json_data["h"]
+    
+    #parámetros extrínsecos
+
+    R = set_rotation(tilt,pan, 0)
+    t = np.array([0, -d, h])
+    
+    # Se crea la camara
+    camera = projective_camera(K, width, height, R, t)
+
+
+    #Se crea y poyecta la cara del plano XZ con y=0 del cubo en color morado
+
+    square_3D = np.array([[0, 0, 0], [0, 0, 1], [1, 0, 1], [1, 0, 0]])
+    square_2D = projective_camera_project(square_3D, camera)
+
+    image_projective = 255 * np.ones(shape=[camera.height, camera.width, 3], dtype=np.uint8)
+    cv2.line(image_projective, (square_2D[0][0], square_2D[0][1]), (square_2D[1][0], square_2D[1][1]), (200, 1, 255), 3)
+    cv2.line(image_projective, (square_2D[1][0], square_2D[1][1]), (square_2D[2][0], square_2D[2][1]), (200, 1, 255), 3)
+    cv2.line(image_projective, (square_2D[2][0], square_2D[2][1]), (square_2D[3][0], square_2D[3][1]), (200, 1, 255), 3)
+    cv2.line(image_projective, (square_2D[3][0], square_2D[3][1]), (square_2D[0][0], square_2D[0][1]), (200, 1, 255), 3)
+
+
+    # Se crea y proyecta la cara del plano XZ con y=1 del cubo en color azul
+    square_3D = np.array([[0,1, 0], [0, 1, 1], [1, 1, 1], [1, 1, 0]])
+    square_2D = projective_camera_project(square_3D, camera)
+
+    cv2.line(image_projective, (square_2D[0][0], square_2D[0][1]), (square_2D[1][0], square_2D[1][1]), (255,0 ,0 ), 3)
+    cv2.line(image_projective, (square_2D[1][0], square_2D[1][1]), (square_2D[2][0], square_2D[2][1]), (255, 0,0), 3)
+    cv2.line(image_projective, (square_2D[2][0], square_2D[2][1]), (square_2D[3][0], square_2D[3][1]),(255, 0, 0), 3)
+    cv2.line(image_projective, (square_2D[3][0], square_2D[3][1]), (square_2D[0][0], square_2D[0][1]), (255,0, 0), 3)
+
+
+
+    # Se crea la cara del plano XY con z=0 del cubo en color rojo
+
+    square_3D = np.array([[0,0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0]])
+    square_2D = projective_camera_project(square_3D, camera)
+
+    cv2.line(image_projective, (square_2D[0][0], square_2D[0][1]), (square_2D[1][0], square_2D[1][1]), (0,0 , 255), 3)
+    cv2.line(image_projective, (square_2D[1][0], square_2D[1][1]), (square_2D[2][0], square_2D[2][1]), (0, 0,255), 3)
+    cv2.line(image_projective, (square_2D[2][0], square_2D[2][1]), (square_2D[3][0], square_2D[3][1]),(0, 0, 255), 3)
+    cv2.line(image_projective, (square_2D[3][0], square_2D[3][1]), (square_2D[0][0], square_2D[0][1]), (0,0, 255), 3)
+
+
+    # Se crea la cara del plano XY con z=1 del cubo en color verde
+
+    square_3D = np.array([[0,0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]])
+    square_2D = projective_camera_project(square_3D, camera)
+
+    cv2.line(image_projective, (square_2D[0][0], square_2D[0][1]), (square_2D[1][0], square_2D[1][1]), (0, 255, 0), 3)
+    cv2.line(image_projective, (square_2D[1][0], square_2D[1][1]), (square_2D[2][0], square_2D[2][1]), (0, 255, 0), 3)
+    cv2.line(image_projective, (square_2D[2][0], square_2D[2][1]), (square_2D[3][0], square_2D[3][1]), (0, 255, 0), 3)
+    cv2.line(image_projective, (square_2D[3][0], square_2D[3][1]), (square_2D[0][0], square_2D[0][1]), (0, 255, 0), 3)
+
+
+    cv2.imshow("Image", image_projective)
+    cv2.waitKey(0)
